@@ -1,34 +1,96 @@
-# Self-Service Analytics With Council
+# Custom Agent for Analysis of FRED Data
 
-A demo that uses a Council Agent to generate and execute Python code for data analytics. Runnable as a notebook or as a Flask/JavaScript app with a UI.
+A demo that uses a Council Agent to access data from FRED and generate Python code for data analytics. Runnable as a notebook or as a Flask/JavaScript app with a UI.
 
-There are two Controllers currently:
-- src/data_analytics_agent/stock_price_analyst/controller.py
-- src/data_analytics_agent/stock_price_analyst/council_controller.py
-
-where `council_controller.py` is an attempt at generalizing the Controller originally developed for the demo so that it might become `LLMInstructController` in Council proper.
+There is a custom controller, which is a development version of `LLMInstructController`
+- `src/agent/council_controller.py`
 
 ## Features
 
-- Generate data analytics code for Pandas DataFrames
-- Uses a controller to decide whether to write new code or edit existing code
+We define an **Agent**:
+
+```mermaid
+graph TB
+    User[User] -->|Messages| LLMInstructController
+    subgraph Agent[Agent]
+        LLMInstructController[LLMInstructController]
+        BasicEvaluator[BasicEvaluator]
+        subgraph Chains
+            Chain1[fred_data_specialist]
+            Chain2[data_analysis_code_editing_and_execution]
+            Chain3[data_analysis_code_editing]
+            Chain4[code_execution_and_correction]
+            Chain5[general]
+        end
+        LLMInstructController -->|"chain;score;instructions"| Chains
+        Chains --> BasicEvaluator
+        BasicEvaluator --> LLMInstructController
+    end
+```
+
+With **Chains**:
+
+```mermaid
+graph TB
+    subgraph B[Chain: fred_data_specialist]
+        G1[Skill: FredDataSpecialist] --> I1[Skill: ParsePythonSkill]
+    end
+```
+
+```mermaid
+graph TB
+    subgraph C[Chain: data_analysis_code_editing_and_execution]
+        H2[Skill: PythonCodeEditorSkill] --> I2[Skill: ParsePythonSkill] --> J2[Skill: PythonExecutionSkill]
+    end
+
+```
+
+```mermaid
+graph TB
+    subgraph D[Chain: data_analysis_code_editing]
+        H3[Skill: PythonCodeEditorSkill] --> I3[Skill: ParsePythonSkill]
+    end
+```
+
+
+```mermaid
+graph TB
+    subgraph E[Chain: code_execution_and_correction]
+        I4[Skill: ParsePythonSkill] --> J4[Skill: PythonExecutionSkill]
+    end
+```
+
+```mermaid
+graph TB
+    subgraph F[Chain: general]
+        K[Skill: GeneralSkill]
+    end
+```
 - Controller interprets the context (chat history + controller state variables) and generates instructions for selected chains
-- Python execution skill has an error-correction loop
-
-## To Do
-
-- Improve controller and code generation prompts (e.g. using few-shot prompts)
+- Python execution skill has an error-correction loop (3 attempts by default)
+- Agent can access data from FRED via `fredapi`
+- Generate data analytics code for Pandas DataFrames
 
 ## Running the demo
 
 - Create a new Python/conda environment
 - Install dependencies using `pip install -r requirements.txt` (outdated - this should be much smaller)
 - Set up a the Python sandbox
-  - cd to `src/data_analytics_agent/stock_price_analyst`
+  - cd to `src/agent`
   - `python -m venv code_sandbox`
   - `source code_sandbox/bin/activate`
-  - `pip install pandas plotly`
-- Run the notebook `src/data_analytics_agent/stock_price_analyst/analyst.ipynb` or `src/data_analytics_agent/stock_price_analyst/analyst_instruct_controller.ipynb`
-  - Note: `analyst_instruct_controller.ipynb` is the notebook that uses the "generalized" controller.
-- Run the Flask app `cd src/data_analytics_agent/flask-app && python app.py` and open the webpage `src/data_analytics_agent/flask-app/index.html`
+  - `pip install pandas plotly seaborn scikit-learn`
+- Populate your `.env` file with
+  - Make a copy of `.env.example` and rename it to `.env`
+  - OpenAI API Key
+  - FRED API Key
+  - Python sandbox `bin` directory
+- Run the notebook `src/run_agent.ipynb`
+- Run the Flask app 
+  - `cd src/flask-app`
+  - `python app.py` and open the webpage (from Finder/Explorer etc.) `src/flask-app/index.html`
+
+
+### Note
+If you are experiencing problems with the Flask app / UI, try restarting both the Flask app **and your browswer**.
 
