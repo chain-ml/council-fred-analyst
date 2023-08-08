@@ -5,7 +5,11 @@ A demo that uses a Council Agent to access data from FRED and generate Python co
 There is a custom controller, which is a development version of `LLMInstructController`
 - `src/agent/council_controller.py`
 
-## Features
+## Prerequisites
+
+To run the demo as-is, you'll need an [OpenAI API Key](https://platform.openai.com/account/org-settings) and a [FRED API Key](https://fred.stlouisfed.org/docs/api/api_key.html).
+
+## Council Components
 
 We define an **Agent**:
 
