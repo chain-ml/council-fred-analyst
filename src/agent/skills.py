@@ -50,7 +50,7 @@ class FredDataSpecialist(SkillBase):
             ),
         ]
 
-        llm_response = self.llm.post_chat_request(messages=messages_to_llm)[-1]
+        llm_response = self.llm.post_chat_request(messages=messages_to_llm).first_choice
 
         logger.debug(f"{self.name}, generated code: {llm_response}")
 
@@ -98,7 +98,7 @@ class PythonCodeEditorSkill(SkillBase):
             ),
         ]
 
-        llm_response = self.llm.post_chat_request(messages=messages_to_llm)[-1]
+        llm_response = self.llm.post_chat_request(messages=messages_to_llm).first_choice
 
         logger.debug(f"{self.name}, generated code: {llm_response}")
 
@@ -170,7 +170,7 @@ class PythonExecutionSkill(SkillBase):
             LLMMessage.system_message(self.system_prompt),
             LLMMessage.assistant_message(error_correction_llm_input),
         ]
-        llm_response = self.llm.post_chat_request(messages=messages_to_llm)[-1]
+        llm_response = self.llm.post_chat_request(messages=messages_to_llm).first_choice
         logger.debug(f"{self.name}, corrected code: {llm_response}")
         return llm_response
 
@@ -299,7 +299,7 @@ class GeneralSkill(SkillBase):
             LLMMessage.assistant_message(instruction)
         ]
 
-        llm_response = self.llm.post_chat_request(messages=messages_to_llm)[-1]
+        llm_response = self.llm.post_chat_request(messages=messages_to_llm).first_choice
 
         logger.debug(f"{self.name}, response: {llm_response}")
 

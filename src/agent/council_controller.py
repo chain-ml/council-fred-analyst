@@ -101,7 +101,7 @@ class LLMInstructController(ControllerBase):
             LLMMessage.user_message(main_prompt),
         ]
 
-        response = self._llm.post_chat_request(messages)[-1]
+        response = self._llm.post_chat_request(messages).first_choice
         logger.debug(f"llm response: {response}")
 
         parsed = [self.parse_line(line, chains) for line in response.splitlines()]
