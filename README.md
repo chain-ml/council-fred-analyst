@@ -66,10 +66,6 @@ graph TB
         K[Skill: GeneralSkill]
     end
 ```
-- Controller interprets the context (chat history + controller state variables) and generates instructions for selected chains
-- Python execution skill has an error-correction loop (3 attempts by default)
-- Agent can access data from FRED via `fredapi`
-- Generate data analytics code for Pandas DataFrames
 
 ## Running the demo
 
