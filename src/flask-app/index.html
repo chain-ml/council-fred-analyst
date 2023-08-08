@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Code Editor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI Emoji", Arial, sans-serif;
+      background: linear-gradient(to right, rgb(57, 7, 57), rgb(181, 32, 181));
+    }
+
+    .container {
+      display: flex;
+      padding-top: 16px;
+      padding-right: 16px;
+      height: calc(100vh - 200px);
+      /* Adjust the height based on the space needed */
+      flex-direction: row;
+      display: flex;
+      /* height: calc(100vh - 100px); */
+      height: calc(100vh - 160px);
+      /* Adjust the height based on the footer's height */
+    }
+
+    .code-editor {
+      flex: 4;
+      /* This will make the code-editor section take up 80% of the space */
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background-color: rgba(255, 255, 255, 0.3);
+      /* Translucent white */
+      overflow-y: auto;
+      /* This will enable scrolling if the content overflows */
+    }
+
+    .logs {
+      flex: 1;
+      /* This will make the logs section take up 20% of the space */
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 16px;
+      background-color: rgba(255, 255, 255, 0.3);
+      /* Translucent white */
+      overflow-y: auto;
+      /* This will enable scrolling if the content overflows */
+    }
+
+
+    .code-container,
+    .chat-container {
+      margin-left: 16px;
+      /* Add margin to create space between code and chat */
+      flex: 1;
+      /* Rest of the CSS code */
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 16px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: rgba(255, 255, 255, 0.3);
+      /* Translucent white */
+    }
+
+    .chat-container {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      max-width: 33%;
+    }
+
+    /* Make sure chat and input fill the space */
+    #chatContainer {
+      overflow: auto;
+      flex-grow: 1;
+    }
+
+    .input-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 30px;
+      /* Fixed height */
+    }
+
+    /* The remaining CSS code has been omitted for brevity */
+    #code {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 18px;
+    }
+
+    /* The remaining CSS code has been omitted for brevity */
+    #logs {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 18px;
+    }
+
+    .button-container {
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 8px 16px;
+      background-color: #3f5a6c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:not(:last-child) {
+      margin-right: 8px;
+    }
+
+    .message {
+      margin-bottom: 8px;
+    }
+
+    .user-message {
+      align-self: flex-start;
+      background-color: #333;
+      /* Dark background */
+      color: #fff;
+      /* Light text color */
+    }
+
+    .assistant-message {
+      align-self: flex-end;
+      background-color: #3f5a6c;
+      /* Dark background */
+      color: #fff;
+      /* Light text color */
+    }
+
+    .message-content {
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    #messageInput {
+      flex-grow: 1;
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background-color: #333;
+      /* Add a dark background color */
+      color: #fff;
+      /* Adjust the text color for better contrast */
+    }
+
+    #sendMessageButton {
+      padding: 8px 16px;
+      background-color: #3f5a6c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* border-top: 1px solid #ccc; */
+      padding-top: 40px;
+      /* background-color: rgba(255, 255, 255, 0.1); */
+      height: 60px;
+      /* Adjust the height as needed */
+    }
+
+    .footer-left {
+      display: flex;
+      padding-left: 16px;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-right: 16px;
+      width: 34.5%;
+      /* New rule: make the footer-right container fill its parent's width */
+    }
+
+    .CodeMirror {
+      height: 100%;
+      /* Reduced height to accommodate footer */
+      font-size: 16px;
+    }
+
+    .CodeMirror-wrap pre {
+      word-break: break-word;
+    }
+
+    /* Custom scroll bar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="code-container">
+      <div class="code-editor">
+        <textarea id="code"></textarea>
+      </div>
+      <div class="logs">
+        <textarea id="logs"></textarea>
+      </div>
+    </div>
+
+    <div class="chat-container">
+      <div id="chatContainer"></div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div class="footer-left">
+      <!-- <button id="executeButton">Execute</button>
+      <button id="refreshButton">Refresh</button> -->
+    </div>
+    <div class="footer-right">
+      <input type="text" id="messageInput" placeholder="Type your message...">
+      <button id="sendMessageButton">Send</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

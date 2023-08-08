@@ -1,0 +1,3 @@
+council-ai==0.0.8
+toml==0.10.2
+flask-cors==4.0.0

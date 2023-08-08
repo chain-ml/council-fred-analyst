@@ -1,0 +1,6 @@
+.env
+**/src/agent/__pycache__
+**/src/flask-app/__pycache__
+.DS_Store
+**/.conda
+**/src/agent/code_sandbox
