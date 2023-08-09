@@ -294,6 +294,9 @@ class GeneralSkill(SkillBase):
         # Get the instruction
         instruction = context.last_message.message
 
+        # Get the current chain context - the last item in the chainHistory - hopefully we can remove this
+        code = context.last_message.data['code']
+
         messages_to_llm = [
             self.system_prompt,
             LLMMessage.assistant_message(instruction)
@@ -306,5 +309,5 @@ class GeneralSkill(SkillBase):
         return ChatMessage.skill(
             source=self.name,
             message=llm_response,
-            data=context.last_message.data,
+            data={k:context.last_message.data[k] for k in context.last_message.data if k != "code"},
         )

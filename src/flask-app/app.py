@@ -33,7 +33,7 @@ class MemoryHandler(logging.Handler):
         if "Controller Message" in log_message:
             self.latest_log_message = log_message
         if "agent execution ended" in log_message:
-            self.latest_log_message = self.latest_output
+            self.latest_log_message = self.latest_output.replace("\n", "<SEP>")
 
 
 memory_handler = MemoryHandler()

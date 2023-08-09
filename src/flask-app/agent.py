@@ -128,7 +128,7 @@ class AgentApp:
 
         self.code_editing_and_execution_chain = Chain(
             name="data_analysis_code_editing_and_execution",
-            description="Generate/edit and execute existing Python code for data analytics and visualization. Use this chain if the user wants to generate new code or edit existing code related to data analysis.",
+            description="Generate/edit and execute existing Python code for data analytics and visualization. Use this chain if the user wants to generate new code or edit existing code related to data analysis. Only use this chain if you plan to edit AND execute.",
             runners=[
                 self.code_editing_skill,
                 self.parse_python_skill,
@@ -156,7 +156,7 @@ class AgentApp:
 
         self.general_chain = Chain(
             name="general",
-            description="Answer general questions without the use of any specialized skills. Use this when the user needs the answer to a question that doesn't require any coding.",
+            description="A general conversational chain for interacting with the human user. Use this chain when you need to send a message to the user or to ask the user a question, e.g. for clarification.",
             runners=[self.general_skill],
         )
 
@@ -164,6 +164,11 @@ class AgentApp:
         self.controller = LLMInstructController(
             llm=self.llm,
             top_k_execution_plan=10,
+            hints=[
+                "Consider asking the user for more input if it isn't clear how best to generate a plan.",
+                "Consider returning the plan to the user to ask for approval before proceeding.",
+                "If you select the 'general' skill, only use it once, and make sure that's the end of the plan so we can give the user a chance to respond."
+            ]
         )
 
     def init_evaluator(self):
@@ -186,5 +191,7 @@ class AgentApp:
         print(f"User Message: {message}")
         self.context.chatHistory.add_user_message(message)
         result = self.agent.execute(context=self.context, budget=Budget(budget))
-        last_message = result.messages[-1].message
-        self.context.chatHistory.add_agent_message(last_message.message)
+        for message in result.messages:
+            self.context.chatHistory.add_agent_message(message.message.message)        
+        # last_message = result.messages[-1].message
+        # self.context.chatHistory.add_agent_message(last_message.message)

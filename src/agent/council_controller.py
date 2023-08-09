@@ -78,7 +78,7 @@ class LLMInstructController(ControllerBase):
         - Break down the request into a sequence of steps that can be handled by one or more CHAIN invocations.
         - You can decide to invoke the same CHAIN multiple times, with different instructions. 
         - Provide CHAIN instructions that are relevant towards completing your TASK.
-        - Use a maximum of 10 steps.
+        - Try to minimize the number of steps, and use a maximum of 10 steps.
         - You will answer with a list of one or more steps, formatted precisely as {name};{execution order between 1 and 10};{natural language instructions for the selected CHAIN}
         - When no CHAIN is relevant, you will answer exactly with 'unknown'
 
@@ -140,8 +140,8 @@ class LLMInstructController(ControllerBase):
                 )
                 result.append(exec_unit)
                 plan_message.append(f"{chain.name};{score};{instructions}")
-        plan_message = '|'.join(plan_message)
-        logger.info(f"Controller Message: {plan_message}")
+        plan_message = '<SEP>'.join(plan_message)
+        logger.info(f"Controller Message:<SEP>{plan_message}")
         logger.info(f"controller result: {result}")
         controller_result = result[: self._top_k]
         return controller_result
@@ -171,18 +171,26 @@ class LLMInstructController(ControllerBase):
                     current_iteration_results.append(scored_result)
 
         # Sort the results based on the Evaluator's score
-        current_iteration_results = sorted(current_iteration_results, key=lambda x: x.score, reverse=True)
+        # current_iteration_results = sorted(current_iteration_results, key=lambda x: x.score, reverse=True)
         logger.debug(f"select_responses result at iteration {self._state['iteration']}: {current_iteration_results}")
 
         # Get the top result
-        scored_message = current_iteration_results[0]
+        # scored_message = current_iteration_results[-1]
+
+        # Iterate over results and update the state
+        for scored_message in current_iteration_results:
+            print(scored_message.message.data)
+            self._state |= scored_message.message.data
 
         # Update the controller state
-        self._state |= scored_message.message.data
+        # self._state |= scored_message.message.data
 
         # Increment the controller iteration
         self._state["iteration"] += 1
         
         # Return only the top result
-        return [scored_message]
+        # return [scored_message]
+
+        # Return all messages
+        return current_iteration_results
     

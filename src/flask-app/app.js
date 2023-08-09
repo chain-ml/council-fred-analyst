@@ -21,29 +21,6 @@ document.addEventListener('DOMContentLoaded', function () {
     body: ''
   })
 
-  // Event listener for executing the code
-  function executeCode() {
-    var code = editor.getValue(); // Assuming you have an initialized CodeMirror editor
-
-    fetch('http://127.0.0.1:5000/execute', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: 'code=' + encodeURIComponent(code)
-    })
-      .then(response => response.text())
-      .then(result => {
-        console.log('Code executed:', result);
-        // Handle the response/result as needed
-      })
-      .catch(error => {
-        console.error('Error executing code:', error);
-        // Handle the error
-      });
-  }
-
-
   // Event listener for automatic reloading on file change
   function reloadOnChange() {
     var fileUrl = 'http://127.0.0.1:5000/get_code';  // Replace with the URL of your file on the server
@@ -58,30 +35,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     xhr.open('GET', fileUrl, true);
     xhr.send();
-  }
-
-  function clearCode() {
-    // Post the code in the editor to the server first
-    var code = '';
-    editor.setValue(code)
-
-    fetch('http://127.0.0.1:5000/post_code', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: 'code=' + encodeURIComponent(code)
-    })
-      .then(response => response.text())
-      .then(result => {
-        console.log('Code executed:', result);
-        // Handle the response/result as needed
-      })
-      .catch(error => {
-        console.error('Error executing code:', error);
-        // Handle the error
-      });
-
   }
 
   // Attach event listeners
@@ -174,7 +127,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   logsSource.onmessage = function (event) {
     // Update the UI with the latest log message
-    const latestLogMessage = event.data;
+    var latestLogMessage = event.data;
+    latestLogMessage = latestLogMessage.split("<SEP>").join("\n");
     console.log(latestLogMessage);
     // Process the latest log message as needed
     logs_console.setValue(latestLogMessage);
