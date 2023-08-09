@@ -164,7 +164,7 @@ class AgentApp:
     def init_controller(self):
         self.controller = LLMInstructController(
             llm=self.llm,
-            top_k_execution_plan=1,
+            top_k_execution_plan=10,
         )
 
     def init_evaluator(self):
@@ -183,7 +183,7 @@ class AgentApp:
             evaluator=self.evaluator,
         )
 
-    def interact(self, message, budget=600):
+    def interact(self, message, budget=1800):
         print(f"User Message: {message}")
         self.context.chatHistory.add_user_message(message)
         result = self.agent.execute(context=self.context, budget=Budget(budget))

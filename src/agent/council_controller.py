@@ -58,20 +58,29 @@ class LLMInstructController(ControllerBase):
         conversation_history = [f"{m.kind}: {m.message}" for m in context.chatHistory.messages]
 
         system_message = """
-        You are the Controller module for an AI assistant. Your role is to control the execution flow by selecting and invoking chains with relevant instructions using natural language."""
+        You are the Controller module for an AI assistant. Your role is to control the execution flow by generating a plan to invoke CHAINs with relevant instructions using natural language."""
 
         main_prompt_template = Template("""
         # TASK DESCRIPTION
-        Your task is to decide which Chain is better suited to handling the USER MESSAGE and to provide natural language instructions to the selected chain.
+        Your task is to break down the problem into a plan (an ordered sequence of instructions) that will each be handled by a CHAIN invocation.
+        You will decide how best to apply your available CHAINs and respond with invocations that include natural language instructions.
         Consider the information in CONTROLLER STATE as you make your decision.
+        Use your avaiable CHAINS to decide what steps to take next. 
+        You are only responsible for deciding what to do next. You will delegate work to other agents via CHAINS.
 
         # INSTRUCTIONS
-        Read the following Chain details given as name and a description (name: {name}, description: {description})
+        Read the following CHAIN details given as name and a description (name: {name}, description: {description})
         $chain_details
 
-        - Select exactly one chain, assign a score out of 10 based on your confidence, and give the chain instructions that will best address the USER MESSAGE
-        - You will answer with {name};{integer score between 0 and 10};{natural language instructions for the selected chain}
-        - When no category is relevant, you will answer exactly with 'unknown'
+        - Consider the CONVERSATION HISTORY and USER MESSAGE.
+        - Consider the name and description of each chain and decide whether or how you want to use it. 
+        - Only give instructions to relevant CHAINs.
+        - Break down the request into a sequence of steps that can be handled by one or more CHAIN invocations.
+        - You can decide to invoke the same CHAIN multiple times, with different instructions. 
+        - Provide CHAIN instructions that are relevant towards completing your TASK.
+        - Use a maximum of 10 steps.
+        - You will answer with a list of one or more steps, formatted precisely as {name};{execution order between 1 and 10};{natural language instructions for the selected CHAIN}
+        - When no CHAIN is relevant, you will answer exactly with 'unknown'
 
         # HINTS
         $hints
@@ -85,7 +94,7 @@ class LLMInstructController(ControllerBase):
         # USER MESSAGE
         $user_message
 
-        # Controller Decision (formatted precisely as {name};{integer score between 0 and 10};{natural language instructions for the selected chain})
+        # Controller Decision (formatted precisely as a plan of {name};{execution order between 1 and 10};{natural language instructions for the selected CHAIN})
         """)
 
         main_prompt = main_prompt_template.substitute(
@@ -102,9 +111,10 @@ class LLMInstructController(ControllerBase):
         ]
 
         response = self._llm.post_chat_request(messages).first_choice
-        logger.debug(f"llm response: {response}")
+        logger.info(f"controller llm response: {response}")
 
-        parsed = [self.parse_line(line, chains) for line in response.strip().splitlines()]
+        parsed = [self.parse_line(line.strip(), chains) for line in response.splitlines()]
+        logger.info(f"controller parsed: {parsed}")
         filtered = [
             r.unwrap()
             for r in parsed
@@ -113,8 +123,10 @@ class LLMInstructController(ControllerBase):
         if (filtered is None) or (len(filtered) == 0):
             return []
 
-        filtered.sort(key=lambda item: item[1], reverse=True)
+        logger.info(f"controller filtered: {filtered}")
+        filtered.sort(key=lambda item: item[1], reverse=False)
         result = []
+        plan_message = []
         for chain, score, instructions in filtered:
             if chain is not None:
                 exec_unit = ExecutionUnit(
@@ -127,8 +139,10 @@ class LLMInstructController(ControllerBase):
                     name=f"{chain.name};{score}",
                 )
                 result.append(exec_unit)
-                logger.info(f"Controller Message: {chain.name};{score};{instructions}")
-
+                plan_message.append(f"{chain.name};{score};{instructions}")
+        plan_message = '|'.join(plan_message)
+        logger.info(f"Controller Message: {plan_message}")
+        logger.info(f"controller result: {result}")
         controller_result = result[: self._top_k]
         return controller_result
 

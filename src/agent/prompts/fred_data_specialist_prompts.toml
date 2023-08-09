@@ -355,6 +355,7 @@ $code_header
 - Never use the input function to request input from the user. Instead, print your message to the standard output.
 - Only load data into Pandas DataFrames in-memory, i.e. do not save any files to the filesystem.
 - Make sure to use clear variable names and comments to indicate where data has been loaded.
+- Prefer to use the `search` function in fredapi when identifying data sources.
 
 # EXISTING CODE
 Read the following code and re-use any part of it that is useful.

@@ -18,7 +18,7 @@ CORS(app)
 agent_app = None
 
 logger = logging.getLogger("council")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 # Create the custom logging handler
