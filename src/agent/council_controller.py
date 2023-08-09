@@ -85,7 +85,7 @@ class LLMInstructController(ControllerBase):
         # USER MESSAGE
         $user_message
 
-        # Contoller Decision (formatted precisely as {name};{integer score between 0 and 10};{natural language instructions for the selected chain})
+        # Controller Decision (formatted precisely as {name};{integer score between 0 and 10};{natural language instructions for the selected chain})
         """)
 
         main_prompt = main_prompt_template.substitute(
@@ -122,7 +122,7 @@ class LLMInstructController(ControllerBase):
                     budget,
                     initial_state=ChatMessage.chain(
                         message=instructions,
-                        data=self._state,
+                        data=self._state | {"iteration": self._state["iteration"]},
                     ),
                     name=f"{chain.name};{score}",
                 )
@@ -130,7 +130,6 @@ class LLMInstructController(ControllerBase):
                 logger.info(f"Controller Message: {chain.name};{score};{instructions}")
 
         controller_result = result[: self._top_k]
-        self._state["iteration"] += 1
         return controller_result
 
     @staticmethod
@@ -152,18 +151,23 @@ class LLMInstructController(ControllerBase):
         current_iteration_results = []
         for scored_result in all_eval_results:
             message = scored_result.message
+            logger.debug(f"eval result from iteration {message.data['iteration']}: {message}, {message.data}")
             if isinstance(message.data, dict):
                 if message.data["iteration"] == self._state["iteration"]:
                     current_iteration_results.append(scored_result)
 
         # Sort the results based on the Evaluator's score
         current_iteration_results = sorted(current_iteration_results, key=lambda x: x.score, reverse=True)
+        logger.debug(f"select_responses result at iteration {self._state['iteration']}: {current_iteration_results}")
 
         # Get the top result
         scored_message = current_iteration_results[0]
 
         # Update the controller state
         self._state |= scored_message.message.data
+
+        # Increment the controller iteration
+        self._state["iteration"] += 1
         
         # Return only the top result
         return [scored_message]
