@@ -4,6 +4,7 @@ import pandas as pd
 from fredapi import Fred
 import plotly.io as pio
 pio.renderers.default = "firefox"
+import os
 
 fred = Fred(api_key=os.getenv("FRED_API_KEY"))
 """
