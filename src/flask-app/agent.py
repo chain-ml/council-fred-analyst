@@ -1,8 +1,8 @@
+from council.llm import AzureLLM
 from council.runners import Budget
 from council.contexts import AgentContext, ChatHistory
 from council.agents import Agent
 from council.chains import Chain
-from council.llm.openai_llm_configuration import OpenAILLMConfiguration
 from council.llm.openai_llm import OpenAILLM
 
 import dotenv
@@ -15,10 +15,9 @@ import toml
 import logging
 import os
 
-
 logging.getLogger("council").setLevel(logging.INFO)
-
 sys.path.append("../agent")
+
 from skills import (
     FredDataSpecialist,
     PythonCodeEditorSkill,
@@ -28,12 +27,13 @@ from skills import (
 )
 from council_controller import LLMInstructController
 from evaluator import BasicEvaluatorWithSource
+from llm_fallback import LLMFallback
 
 
 class AgentApp:
     def __init__(self):
         self.context = AgentContext(chat_history=ChatHistory())
-        self.llm = OpenAILLM(config=OpenAILLMConfiguration.from_env())
+        self.llm = LLMFallback(OpenAILLM.from_env(), AzureLLM.from_env(), retry_before_fallback=1)
         self.load_prompts()
         self.init_skills()
         self.init_chains()
@@ -43,7 +43,7 @@ class AgentApp:
 
     def load_prompts(self):
         # Load prompts and prompt templates
-        
+
         self.fred_system_prompt = toml.load("../agent/prompts/fred_data_specialist_prompts.toml")[
             "system_message"
         ]["prompt"]
@@ -116,11 +116,10 @@ class AgentApp:
         self.general_skill = GeneralSkill(
             self.llm,
             system_prompt="""You are a friendly, helpful assistant. 
-            Generate a brief response accoring to the provided instruction; 2 sentences at most.""",
+            Generate a brief response according to the provided instruction; 2 sentences at most.""",
         )
 
     def init_chains(self):
-
         self.fred_data_specialist_chain = Chain(
             name="fred_data_specialist",
             description="Identify and access economic datasets from the FRED database. Use this chain when you need to generate or edit code for accessing or downloading data from FRED.",
