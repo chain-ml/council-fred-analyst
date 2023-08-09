@@ -79,7 +79,7 @@ graph TB
   - cd to `src/agent`
   - `python -m venv code_sandbox`
   - `source code_sandbox/bin/activate`
-  - `pip install pandas plotly seaborn scikit-learn`
+  - `pip install fredapi pandas plotly seaborn scikit-learn`
 - Populate your `.env` file with
   - Make a copy of `.env.example` and rename it to `.env`
   - OpenAI API Key
